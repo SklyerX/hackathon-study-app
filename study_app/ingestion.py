@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from enum import Enum
 from typing import Optional
+from uuid import UUID
 
 
 class InputType(str, Enum):
@@ -24,6 +25,7 @@ class IngestionResult(BaseModel):
     status: IngestionStatus
     input_type: InputType
     filename: str
+    session_id: UUID
     normalised_text: str
     character_count: int
     word_count: int

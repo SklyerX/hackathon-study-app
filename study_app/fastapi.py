@@ -1,5 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from study_app.audioservices import router as audio_router
+from study_app.summaryservices import router as summary_router
+from study_app.quiz import router as quiz_router
 
 from study_app.ingestion import ingestion
 from study_app.config import get_settings
@@ -24,6 +27,9 @@ app.add_middleware(
 
 # ── Routers ───────────────────────────────────────────────────────────────────
 app.include_router(ingestion.router)
+app.include_router(quiz_router)
+app.include_router(audio_router)
+app.include_router(summary_router)
 
 
 # ── Health check ──────────────────────────────────────────────────────────────

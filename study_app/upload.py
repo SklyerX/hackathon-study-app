@@ -2,9 +2,8 @@ import re
 import mimetypes
 from pathlib import Path
 
-from matplotlib import text
-from scipy import io
-import pyPDF2
+import io
+import PyPDF2
 
 import google.generativeai as genai
 

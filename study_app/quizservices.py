@@ -1,5 +1,3 @@
-
-
 import json
 import re
 from uuid import UUID
@@ -61,7 +59,7 @@ Rules:
 - Vary difficulty: roughly 40% easy, 40% medium, 20% hard.
 
 TEXT:
-{text[:6000]}"""
+{text[:100000]}"""
 
 
 def _semantic_grade_prompt(question: str, correct: str, user_answer: str) -> str:
@@ -160,7 +158,7 @@ class QuizService:
         """
         Grade the user's answer, persist the attempt, and award XP.
         """
-        # 1. Fetch question WITH correct answer (server-side only)
+        # 1. Fetch question WITH correct answer
         q = (
             self.db.table("quiz_questions")
             .select("*")
@@ -173,12 +171,16 @@ class QuizService:
         correct = q["correct_answer"]
         explain = q.get("explanation", "")
 
-        # 2. Grade by question type
+        # 2. Adaptive Grading Logic
         if q_type == QuestionType.mcq:
+            # Still use normalized string matching for Multiple Choice
             is_correct = _normalise_mcq_answer(
                 req.user_answer) == _normalise_mcq_answer(correct)
         else:
-            is_correct = req.user_answer.strip().lower() == correct.strip().lower()
+            # USE AI FOR SEMANTIC GRADING (True/False or Short Answer)
+            # This ensures "Mitochondria produce energy" is marked correct
+            is_correct = self._semantic_grade(
+                q["question_text"], correct, req.user_answer)
 
         # 3. Persist attempt
         self.db.table("quiz_attempts").insert({
@@ -204,15 +206,15 @@ class QuizService:
             return bool(result.get("is_correct", False))
         except Exception:
             # Fallback to fuzzy string match if Gemini fails
-            return user_answer.strip().lower() in correct.strip().lower()
+            return user_answer.strip().lower() == correct.strip().lower()
 
     def get_unanswered(self, session_id: str, user_id: str) -> QuizResponse:
         """Returns only questions the user hasn't answered yet."""
-        # Get all answered question IDs
+
         answered = (
             self.db.table("quiz_attempts")
             .select("question_id")
-            .eq("user_id", user_id)
+            .eq("user_id", str(user_id))
             .execute()
         ).data
         answered_ids = {r["question_id"] for r in answered}
@@ -221,8 +223,8 @@ class QuizService:
         all_qs = (
             self.db.table("quiz_questions")
             .select("*")
-            .eq("session_id", session_id)
-            .eq("user_id", user_id)
+            .eq("user_id", str(user_id))
+            .eq("user_id", str(user_id))
             .execute()
         ).data
 

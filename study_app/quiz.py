@@ -2,7 +2,6 @@
 import asyncio
 from uuid import UUID
 from fastapi import APIRouter, HTTPException, Depends, Query
-
 from study_app.quiz import (
     GenerateQuizRequest,
     QuizResponse,
