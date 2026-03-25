@@ -1,21 +1,20 @@
-
 import asyncio
 from uuid import UUID
 from fastapi import APIRouter, HTTPException, Depends, Query
-from study_app.quiz import (
+
+from study_app.models import (
     GenerateQuizRequest,
     QuizResponse,
     SubmitAnswerRequest,
     AnswerFeedback,
+    QuizQuestionResponse
 )
 from study_app.quizservices import QuizService
 
 router = APIRouter(tags=["Quiz & Rewards"])
 
-
 def get_quiz_service() -> QuizService:
     return QuizService()
-
 
 @router.post("/api/quiz/generate", response_model=QuizResponse)
 async def generate_quiz(
@@ -27,12 +26,12 @@ async def generate_quiz(
     Uses the simplified text if available, otherwise normalised text.
     """
     try:
+        # We run this in an executor because the AI generation can be blocking
         return await asyncio.get_event_loop().run_in_executor(
             None, svc.generate_quiz, req
         )
     except Exception as e:
         raise HTTPException(status_code=422, detail=str(e))
-
 
 @router.get("/api/quiz/{session_id}", response_model=QuizResponse)
 def get_quiz(
@@ -42,16 +41,9 @@ def get_quiz(
 ):
     """Fetch all questions for a session (correct answers not included)."""
     try:
-        db = svc.db
-        rows = (
-            db.table("quiz_questions")
-            .select("*")
-            .eq("session_id", str(session_id))
-            .eq("user_id", str(user_id))
-            .execute()
-        ).data
-
-        from study_app.quiz import QuizQuestionResponse
+        # Fetching directly from the service which handles Supabase logic
+        rows = svc.db.table("quiz_questions").select("*").eq("session_id", str(session_id)).execute().data
+        
         questions = [
             QuizQuestionResponse(
                 id=r["id"],
@@ -68,7 +60,6 @@ def get_quiz(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-
 @router.get("/api/quiz/{session_id}/next", response_model=QuizResponse)
 def get_next_questions(
     session_id: UUID,
@@ -78,7 +69,6 @@ def get_next_questions(
     """Return only questions the user hasn't answered yet."""
     return svc.get_unanswered(str(session_id), str(user_id))
 
-
 @router.post("/api/quiz/answer", response_model=AnswerFeedback)
 async def submit_answer(
     req: SubmitAnswerRequest,
@@ -86,12 +76,10 @@ async def submit_answer(
         default=0, ge=0, description="Current correct answer streak"),
     svc: QuizService = Depends(get_quiz_service),
 ):
+    """Submit a user answer and get immediate AI feedback."""
     try:
         return await asyncio.get_event_loop().run_in_executor(
-            None,
-            svc.submit_answer,
-            req,
-            consecutive_correct,
+            None, svc.submit_answer, req, consecutive_correct
         )
     except Exception as e:
-        raise HTTPException(status_code=422, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e))
