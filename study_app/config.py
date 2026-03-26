@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     # App
     app_env: str = "development"
     max_upload_size_mb: int = 50
-
+    database_connection_uri: str
     # elevenlabs
     elevenlabs_api_key: str
     elevenlabs_voice_id: str = "pNInz6obpgDQGcFmaJgB"
