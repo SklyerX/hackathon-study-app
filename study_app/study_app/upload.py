@@ -3,29 +3,43 @@ import mimetypes
 import io
 import PyPDF2
 from PIL import Image
-from study_app.gemini import get_gemini_client
-from study_app.config import get_settings
-from study_app.models import IngestionResult, IngestionStatus, InputType
+from .gemini import get_gemini_client
+from .config import get_settings
+from .models import IngestionResult, IngestionStatus, InputType
 
 AUDIO_MIME_TYPES = {
-    "audio/mpeg", "audio/mp3", "audio/wav", "audio/x-wav",
-    "audio/ogg", "audio/webm", "audio/m4a", "audio/mp4",
+    "audio/mpeg",
+    "audio/mp3",
+    "audio/wav",
+    "audio/x-wav",
+    "audio/ogg",
+    "audio/webm",
+    "audio/m4a",
+    "audio/mp4",
 }
 
 IMAGE_MIME_TYPES = {
-    "image/jpeg", "image/png", "image/gif", "image/webp", "image/bmp", "image/tiff",
+    "image/jpeg",
+    "image/png",
+    "image/gif",
+    "image/webp",
+    "image/bmp",
+    "image/tiff",
 }
 
 PDF_MIME_TYPES = {"application/pdf"}
 
+
 def _count_words(text: str) -> int:
     return len(text.split())
+
 
 def _clean_text(text: str) -> str:
     """Remove excessive whitespace / control characters."""
     text = re.sub(r"[\r\n]+", "\n", text)
     text = re.sub(r"[ \t]+", " ", text)
     return text.strip()
+
 
 def _detect_input_type(filename: str, provided_type: InputType | None) -> InputType:
     if provided_type:
@@ -35,9 +49,10 @@ def _detect_input_type(filename: str, provided_type: InputType | None) -> InputT
         return InputType.audio
     if mime in IMAGE_MIME_TYPES:
         return InputType.image
-    return InputType.text # Default for PDFs and text
+    return InputType.text  # Default for PDFs and text
 
-class FileProcessor: 
+
+class FileProcessor:
     def __init__(self):
         self.client = get_gemini_client()
         self.settings = get_settings()
@@ -100,21 +115,19 @@ class FileProcessor:
             "Transcribe this audio recording accurately. Return ONLY the transcript."
         )
         response = self.client.models.generate_content(
-            model="gemini-1.5-flash",
-            contents=[
-                prompt,
-                {"mime_type": mime, "data": file_bytes}
-            ]
+            model="gemini-2.5-flash",
+            contents=[prompt, {"mime_type": mime, "data": file_bytes}],
         )
         return response.text
 
     async def _process_image(self, file_bytes: bytes) -> str:
         image = Image.open(io.BytesIO(file_bytes))
-        prompt = "Extract ALL text visible in this image. Return ONLY the extracted text."
+        prompt = (
+            "Extract ALL text visible in this image. Return ONLY the extracted text."
+        )
 
         response = self.client.models.generate_content(
-            model="gemini-1.5-flash",
-            contents=[prompt, image]
+            model="gemini-2.5-flash", contents=[prompt, image]
         )
         return response.text
 

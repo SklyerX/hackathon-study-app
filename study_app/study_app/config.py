@@ -15,6 +15,9 @@ class Settings(BaseSettings):
     elevenlabs_voice_id: str = "pNInz6obpgDQGcFmaJgB"
     # Storage
     upload_dir: str = "uploads"
+    # Supabase
+    supabase_url: str
+    supabase_service_role_key: str
 
     class Config:
         env_file = ".env"

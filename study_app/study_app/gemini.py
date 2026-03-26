@@ -1,6 +1,7 @@
 from google import genai
 from functools import lru_cache
-from study_app.config import get_settings
+from .config import get_settings
+
 
 @lru_cache
 def get_gemini_client() -> genai.Client:

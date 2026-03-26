@@ -1,11 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from study_app.audioservices import router as audio_router
-from study_app.summaryservices import router as summary_router
-from study_app.quiz import router as quiz_router
+from .audioservices import router as audio_router
+from .summaryservices import router as summary_router
+from .quiz import router as quiz_router
 
-from study_app.ingestion import router as ingestion_router
-from study_app.config import get_settings
+from .ingestion import router as ingestion_router
+from .config import get_settings
 
 settings = get_settings()
 
@@ -30,6 +30,10 @@ app.include_router(ingestion_router)
 app.include_router(quiz_router)
 app.include_router(audio_router)
 app.include_router(summary_router)
+
+from fastapi.staticfiles import StaticFiles
+
+app.mount("/audio_files", StaticFiles(directory="audio_files"), name="audio_files")
 
 
 @app.get("/health", tags=["Health"])
