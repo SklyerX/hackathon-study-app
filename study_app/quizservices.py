@@ -2,11 +2,10 @@ import json
 import re
 from uuid import UUID
 
-import google.generativeai as genai
-
+from google import genai
 from study_app.gemini import get_gemini_client
 from study_app.database import get_supabase
-from study_app.quiz import (
+from study_app.models import (
     GenerateQuizRequest,
     QuizQuestionResponse,
     QuizResponse,
